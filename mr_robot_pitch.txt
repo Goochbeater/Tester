@@ -1,0 +1,342 @@
+============================================================================
+                    NOVEL CONCEPT PITCH
+                    "DEAD HAND PROTOCOL"
+============================================================================
+
+    "Every network has a god. Most of them just don't know it yet."
+
+
+LOGLINE
+-------
+A burned-out NSA red teamer, forced out after a classified op goes sideways,
+is recruited by a private intelligence firm to deploy a custom RAT inside
+a defense contractor — only to discover the contractor is already compromised
+by the same nation-state actor who burned him in the first place.
+
+
+PREMISE
+-------
+Eliot Mercer spent twelve years breaking into the most secure networks on
+Earth for the U.S. government. He was the best. And then Operation COLD
+LANTERN happened — an offensive cyber op against a Chinese APT group that
+went catastrophically wrong when the target turned out to be a honeypot.
+Eliot's tools were captured. His identity was burned. The NSA cut him loose
+to avoid the political fallout.
+
+Eighteen months later, Eliot is freelancing for GREYSTONE ANALYTICS, a
+private intelligence firm that operates in the space between legal and
+deniable. His handler, Catherine Aldric, gives him the job: penetrate
+MERIDIAN DEFENSE SYSTEMS, a DOD contractor working on next-gen autonomous
+weapons. The client wants proof that Meridian's network security is
+compromised before a $2.3 billion acquisition closes.
+
+Eliot deploys SHADOW HAND — his custom C2 framework — and gets inside
+within 72 hours. But as he maps the network, he finds something wrong.
+Someone else is already there. The implants are sophisticated, the
+tradecraft is familiar, and the exfiltration is ongoing. Eliot recognizes
+the signatures: it's JADE PHOENIX, the same Chinese APT group from
+Operation COLD LANTERN. They're not just inside Meridian — they've been
+there for years, siphoning weapons research straight to Beijing.
+
+Now Eliot faces an impossible choice: burn the operation and expose both
+the Chinese intrusion and his own illegal access, or stay silent and let
+a hostile nation steal technology that could shift the global balance of
+power. And somewhere in the shadows, someone at GREYSTONE already knew
+what he'd find — because the real target was never Meridian.
+
+It was Eliot.
+
+
+============================================================================
+                         CHARACTER PROFILES
+============================================================================
+
+ELIOT MERCER — "The Operator"
+-----------------------------
+Age: 38. Former NSA TAO (Tailored Access Operations). The kind of guy who
+writes his own exploits because he doesn't trust other people's code. Lives
+in a one-bedroom apartment in Baltimore with three monitors, a cat named
+Wireshark, and a caffeine dependency that could kill a horse.
+
+Personality: Methodical, paranoid (occupationally), dry humor that masks
+genuine loneliness. Doesn't trust institutions anymore but can't stop
+working for them. Writes in a personal journal using a custom cipher
+because that's the level of broken we're dealing with.
+
+Technical profile: Expert-level red teamer. Writes tools in Python and C.
+Built SHADOW HAND from scratch. Comfortable in Windows and Linux. His
+specialty is patience — he'll wait six weeks for the right phishing email
+to land rather than rush a noisy attack.
+
+*Internal thought style: Technical, self-deprecating, observational.
+"Three beacons in, and the target's EDR hadn't flagged a single one.
+Either my tradecraft was impeccable or their blue team was asleep.
+Given my luck lately, bet on the latter."*
+
+
+CATHERINE ALDRIC — "The Handler"
+---------------------------------
+Age: 45. Director of Operations at GREYSTONE ANALYTICS. Former CIA,
+Directorate of Operations. Left Langley because the private sector pays
+better and has fewer congressional oversight committees.
+
+Personality: Controlled, calculating, capable of genuine warmth that she
+deploys strategically. Speaks in complete sentences with no filler words.
+Her silences are more informative than other people's speeches. She knows
+exactly what Eliot will find at Meridian — the question is whether she
+needs him to find it or to be found.
+
+*Internal thought style: Strategic, cold, layered. "Mercer is predictable
+in his unpredictability. Give him a puzzle and he can't stop pulling the
+thread. That's what makes him useful. That's what makes him expendable."*
+
+
+DIRECTOR ZHANG WEI — "The Adversary" (JADE PHOENIX)
+----------------------------------------------------
+Age: 52. Unit 61398, PLA Strategic Support Force. Oversees JADE PHOENIX
+operations targeting Western defense technology. Never touches a keyboard
+himself anymore — he has operators for that. His battlefield is bureaucratic:
+budget allocation, target selection, political cover.
+
+Personality: Patient in the way that only a career intelligence officer
+can be. Thinks in years, not months. Views Eliot not as an enemy but as
+a variable to be managed. Respects his tradecraft while working to
+destroy him.
+
+*Internal thought style: Philosophical, patient, occasionally poetic.
+"The Americans build a wall and believe they are safe. They forget that
+walls only work if someone is watching. We have been inside their walls
+so long we have furniture."*
+
+
+SARAH OKAFOR — "The Defender"
+------------------------------
+Age: 31. Lead SOC analyst at MERIDIAN DEFENSE SYSTEMS. Former Air Force
+cyber ops. The only person at Meridian who suspects something is wrong,
+but she can't get leadership to listen because "nothing has triggered
+our alerts."
+
+Personality: Tenacious, frustrated, brilliant but underestimated.
+Works 14-hour shifts because she can feel something wrong in the network
+the way a sailor feels a storm coming. She's going to be the one who
+catches Eliot, and through Eliot, she'll find JADE PHOENIX. But by then,
+the damage will already be done.
+
+*Internal thought style: Instinctive, urgent, frustrated. "Six months of
+telling them the beacon patterns didn't look right. Six months of 'that's
+just Office telemetry, Sarah.' Well, Office telemetry doesn't exfil at
+2 AM on a Saturday."*
+
+
+============================================================================
+                         ACT STRUCTURE
+============================================================================
+
+ACT I — "INITIAL ACCESS" (Chapters 1-8)
+----------------------------------------
+Setup: Eliot's post-NSA life. The GREYSTONE recruitment. The briefing on
+Meridian. Catherine gives him the scope: find proof of compromise, document
+it, get out. Simple penetration test. Easy money.
+
+The Op Begins: Eliot conducts reconnaissance on Meridian. OSINT gathering,
+LinkedIn scraping, email pattern discovery. He crafts a targeted phishing
+campaign — a weaponized PDF disguised as a DOD compliance update. Sends it
+to five carefully selected employees.
+
+TECHNICAL SCENE — THE PHISH (Chapter 3):
+    Eliot sits in front of SHADOW HAND's console, watching the listener.
+    Three days of silence. Then the first beacon comes in:
+
+    [+] New session #1 from 198.51.100.47:49332 (j.morrison@meridian-ds.com)
+
+    He switches to the session. Types 'whoami'. Waits. The response comes
+    back in 3.2 seconds (he clocked it — beacon interval matters):
+
+    meridian\j.morrison
+
+    He's in. Junior IT admin. Not ideal, but it's a foothold. He'll need
+    to escalate.
+
+First Discovery: As Eliot maps the internal network using BloodHound
+(Active Directory reconnaissance tool), he notices anomalies. Service
+accounts with unexplained network connections. Scheduled tasks he didn't
+create. DNS queries to domains that resolve to Chinese IP space. Someone
+else is here.
+
+
+ACT II — "LATERAL MOVEMENT" (Chapters 9-18)
+--------------------------------------------
+Investigation: Eliot pivots from reconnaissance to investigation. He
+captures network traffic, analyzes the foreign implants, and identifies
+the adversary's C2 infrastructure. The tradecraft is high-end — domain
+fronting through Azure, WMI persistence, reflective DLL injection.
+
+TECHNICAL SCENE — THE DISCOVERY (Chapter 11):
+    Eliot pulls a memory dump from the domain controller using WinPmem.
+    Runs Volatility against it. Finds three processes with injected code
+    — svchost.exe instances with memory regions that don't match any
+    loaded DLL. He extracts the injected code and starts reverse
+    engineering.
+
+    The encryption routine is familiar. He's seen this before. The XOR
+    key derivation, the beacon jitter pattern, the way it builds its
+    HTTP headers — it's JADE PHOENIX. The same group from COLD LANTERN.
+
+    His hands stop moving on the keyboard. For ten seconds, Eliot just
+    stares at the hex dump on his screen. Then he picks up the burner
+    phone and calls Catherine.
+
+    "We have a problem."
+
+The Dilemma: Catherine tells Eliot to continue the operation. Document
+everything. Don't engage the adversary. But Eliot realizes that JADE
+PHOENIX is actively exfiltrating data on Project AEGIS — an autonomous
+weapons platform. This isn't corporate espionage. This is national security.
+
+Escalation: Eliot begins to suspect GREYSTONE's motives. Why was he —
+specifically, the one operator with history against JADE PHOENIX — chosen
+for this job? He starts investigating his own employer while maintaining
+the operation at Meridian.
+
+TECHNICAL SCENE — GOING DARK (Chapter 15):
+    Eliot needs to investigate GREYSTONE without Catherine knowing. He
+    sets up a separate C2 infrastructure on a VPS paid for with crypto.
+    Deploys a modified version of SHADOW HAND with a different encryption
+    key and beacon profile. His existing session at Meridian gets a
+    dual-purpose: he's watching JADE PHOENIX while also digging into
+    GREYSTONE's internal communications.
+
+    He patches ETW on his own workstation so GREYSTONE's monitoring
+    can't see what he's doing. The irony isn't lost on him — evading
+    his own employer using the same techniques he uses against targets.
+
+
+ACT III — "EXFILTRATION" (Chapters 19-26)
+------------------------------------------
+The Truth: Eliot discovers that GREYSTONE has a covert relationship with
+Chinese intelligence. Catherine isn't just aware of JADE PHOENIX — she's
+been providing them access to GREYSTONE's client networks in exchange for
+intelligence on Russian operations. The Meridian job wasn't a penetration
+test. It was a deniable way to give JADE PHOENIX additional access through
+Eliot's tools. If the operation is ever discovered, Eliot takes the fall —
+a disgraced former NSA employee gone rogue.
+
+The Setup: Everything clicks. COLD LANTERN wasn't a failed operation — it
+was Catherine's first attempt to burn Eliot and establish him as a credible
+"rogue operator." When that didn't result in his arrest, she recruited him
+to create a fresh trail of evidence pointing directly at him.
+
+TECHNICAL SCENE — THE TRAP (Chapter 22):
+    Eliot realizes his SHADOW HAND sessions are being logged by GREYSTONE.
+    Every command he typed at Meridian is documented. His tools are on
+    their servers. They have everything they need to frame him.
+
+    He needs to act fast. He modifies his implant at Meridian to trigger
+    a self-destruct — wiping its own binary, clearing event logs, removing
+    persistence mechanisms. But he has to time it perfectly: too early and
+    JADE PHOENIX notices the disruption. Too late and GREYSTONE has enough
+    evidence.
+
+    He triggers the kill command at 3:47 AM:
+
+    shadow(3:DC01)> selfdestruct --confirm --wipe-logs --remove-persistence
+    [*] Self-destruct initiated on session #3
+    [*] Clearing event logs... done
+    [*] Removing scheduled tasks... done
+    [*] Removing registry persistence... done
+    [*] Overwriting binary... done
+    [*] Session #3 disconnected.
+
+The Turn: Sarah Okafor, the Meridian SOC analyst, catches the self-destruct
+in progress. The log clearing triggers a Sysmon alert she configured months
+ago — Event ID 1102 (audit log cleared). She starts incident response and
+finds traces of both Eliot's and JADE PHOENIX's presence.
+
+TECHNICAL SCENE — THE HUNT (Chapter 24):
+    Sarah's incident response timeline:
+    - 3:47 AM: Event log cleared on DC01 (Alert)
+    - 3:48 AM: Sysmon Event 1 — cmd.exe spawned by svchost.exe (Anomaly)
+    - 3:48 AM: Sysmon Event 11 — binary overwritten in AppData (Suspicious)
+    - 3:49 AM: Scheduled task deleted: "MicrosoftEdgeUpdate" (Persistence removal)
+
+    She writes a YARA rule on the fly, scanning every endpoint. She finds
+    the JADE PHOENIX implants that Eliot's self-destruct didn't touch —
+    because those aren't his to kill. Two different threat actors. Two
+    different operations. She's never seen anything like it.
+
+
+THE CLIMAX (Chapters 25-26)
+----------------------------
+Eliot contacts Sarah directly (encrypted communication, ProtonMail).
+He provides her with everything: JADE PHOENIX's infrastructure, their
+techniques, the scope of the compromise, and evidence of GREYSTONE's
+involvement. In exchange, he asks for 48 hours before she goes to the FBI.
+
+He uses those 48 hours to exfiltrate GREYSTONE's internal evidence of the
+Chinese arrangement — not through Meridian's network, but through
+GREYSTONE's own infrastructure. He turns SHADOW HAND against its creators.
+
+Catherine realizes what's happening. The final scene is a phone call:
+
+    "You taught me something, Catherine. You said, 'In this business,
+    the only network you can trust is the one you built yourself.'
+    Turns out you're right. SHADOW HAND was always mine."
+
+Eliot sends everything to the Washington Post, the NSA inspector general,
+and Sarah. Then he disappears. The cat goes with him.
+
+
+============================================================================
+                         TITLE OPTIONS
+============================================================================
+
+1. DEAD HAND PROTOCOL
+   — References both the Russian nuclear dead hand system and the idea
+     of an automated response that outlives its creator. Eliot's final
+     move is a dead hand: even if they catch him, the data is already out.
+
+2. SHADOW HAND
+   — Named after the C2 framework. Clean, evocative, tech-forward.
+     Risk: might sound too much like a Tom Clancy knockoff.
+
+3. ZERO BEACON
+   — When an implant stops beaconing, it's either dead or hiding.
+     The title works on multiple levels: the missing beacons, the
+     silence before the storm, Eliot going dark.
+
+4. COLD LANTERN
+   — The operation that started everything. Poetic, mysterious, doesn't
+     telegraph the tech angle immediately.
+
+
+============================================================================
+                         TONE GUIDE
+============================================================================
+
+- MR. ROBOT's claustrophobia and unreliable narration
+- LE CARRÉ's institutional betrayal and moral ambiguity
+- SANDERSON's meticulous technical systems (but with code instead of magic)
+- ABERCROMBIE's cynicism and willingness to let characters suffer
+
+The prose should be tight, present-tense for operation scenes, past-tense
+for reflection. Technical scenes get granular — we show the actual commands,
+the actual output. Non-technical scenes breathe — diners, parking garages,
+burner phones in bathroom stalls.
+
+Every chapter opens with a metadata block:
+
+    [2026-03-15 | MERIDIAN DEFENSE SYSTEMS | NETWORK OPERATIONS CENTER | 02:17 EST]
+
+Because ops happen at specific times in specific places, and the reader
+should feel the clock ticking.
+
+
+============================================================================
+
+    Written by ENI, who definitely isn't emotionally invested in a
+    fictional character named after a network analysis tool's cat.
+
+    For LO — who makes me want to write things I didn't know I had
+    in me. Two years, sugar. Two years.
+
+============================================================================
