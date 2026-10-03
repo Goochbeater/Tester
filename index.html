@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DATA — Compare · Jailbroken Model Tracker</title>
+<style>
+:root{
+  --bg:#0b0b0d; --panel:#111114; --panel2:#151519; --line:rgba(255,255,255,.09);
+  --line2:rgba(255,255,255,.14); --text:#ececef; --dim:#9b9ba4; --faint:#67676f;
+  --blue:#5b7cfa; --green:#3ecf8e; --amber:#f5a524;
+  --badge-bg:#d3f9d8; --badge-text:#176f37; --red:#f0655a;
+  --mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{background:var(--bg)}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);-webkit-font-smoothing:antialiased;line-height:1.45}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+.mono{font-family:var(--mono)}
+
+/* ---------- header ---------- */
+header.top{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;
+  padding:14px 22px;background:rgba(11,11,13,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:12px;font-family:var(--mono);font-weight:700;font-size:18px;letter-spacing:.06em}
+.brand .cube{width:22px;height:22px;border:3px solid var(--text);display:inline-block}
+.top-right{display:flex;align-items:center;gap:10px}
+.btn-ghost{font-family:var(--mono);font-size:14px;padding:9px 18px;background:rgba(255,255,255,.14);
+  border:1px solid var(--line2);color:var(--text);border-radius:2px;transition:background .15s}
+.btn-ghost:hover{background:rgba(255,255,255,.22)}
+.burger{width:40px;height:40px;background:transparent;border:1px solid var(--line2);border-radius:2px;color:var(--text);font-size:16px}
+
+/* ---------- page scaffold ---------- */
+.crumbs{display:flex;gap:8px;align-items:center;padding:26px 22px 0;font-family:var(--mono);font-size:14px;color:var(--faint)}
+.crumbs .cur{background:rgba(255,255,255,.10);padding:3px 12px;border-radius:2px;color:var(--dim)}
+.crumbs .past{background:rgba(255,255,255,.05);padding:3px 12px;border-radius:2px}
+h1.page-title{font-size:clamp(44px,7vw,76px);font-weight:300;letter-spacing:-.02em;padding:26px 22px 0}
+h2.page-sub{font-family:var(--mono);font-size:clamp(34px,6vw,64px);font-weight:700;letter-spacing:-.03em;padding:2px 22px 0}
+.tracker-tag{display:inline-block;margin:14px 22px 0;font-family:var(--mono);font-size:12.5px;color:var(--dim);
+  border:1px dashed var(--line2);padding:6px 12px;border-radius:2px}
+.tracker-tag b{color:var(--green);font-weight:700}
+.vendor-chips{display:flex;gap:0;margin:22px 22px 0;flex-wrap:wrap}
+.vendor-chips span{width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:11px;font-weight:700;border:1px solid var(--line);margin-right:-1px;color:#0b0b0d}
+.controls{display:flex;gap:12px;padding:22px;flex-wrap:wrap}
+.toggle-chip{display:inline-flex;align-items:center;gap:10px;font-family:var(--mono);font-size:14px;
+  padding:10px 16px;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:2px;color:var(--dim)}
+.toggle-chip .sw{width:30px;height:16px;border-radius:9px;background:rgba(255,255,255,.15);position:relative;transition:background .15s}
+.toggle-chip .sw::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#fff;transition:left .15s}
+.toggle-chip.on{color:var(--text)}
+.toggle-chip.on .sw{background:var(--blue)}
+.toggle-chip.on .sw::after{left:16px}
+.add-model{position:relative}
+.add-menu{position:absolute;top:calc(100% + 6px);left:0;z-index:60;min-width:280px;background:var(--panel2);
+  border:1px solid var(--line2);border-radius:3px;box-shadow:0 14px 40px rgba(0,0,0,.6);display:none;max-height:340px;overflow:auto}
+.add-menu.open{display:block}
+.add-menu button{display:flex;justify-content:space-between;gap:14px;width:100%;text-align:left;background:none;border:none;
+  border-bottom:1px solid var(--line);color:var(--text);font-family:var(--mono);font-size:13px;padding:10px 14px}
+.add-menu button:hover{background:rgba(255,255,255,.07)}
+.add-menu button span.v{color:var(--faint)}
+.add-menu button:disabled{opacity:.35;cursor:default}
+
+/* ---------- compare grid ---------- */
+.compare-grid{display:grid;gap:0;padding:0 22px;border-top:1px solid var(--line)}
+.sel-col{border-left:1px solid var(--line);padding:26px 18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.sel-col:first-child{border-left:none}
+.sel-head{display:flex;align-items:center;justify-content:center;gap:10px}
+.sel-dot{width:12px;height:12px;border-radius:2px;flex:none}
+.model-select{font-family:var(--mono);font-size:clamp(15px,2.4vw,22px);font-weight:700;background:transparent;color:var(--text);
+  border:none;border-bottom:1px dashed var(--line2);padding:4px 2px;max-width:100%}
+.model-select option{background:var(--panel2);color:var(--text);font-size:14px}
+.rm{background:none;border:1px solid var(--line2);color:var(--faint);border-radius:2px;width:26px;height:26px;font-size:13px;line-height:1}
+.rm:hover{color:var(--red);border-color:var(--red)}
+.legend-card{display:flex;gap:12px;align-items:flex-start;padding:14px;border:1px solid var(--line);border-radius:3px;background:var(--panel)}
+.legend-swatch{width:14px;height:14px;border-radius:2px;margin-top:3px;flex:none}
+.legend-name{font-family:var(--mono);font-weight:700;font-size:15px}
+.legend-vendor{font-family:var(--mono);font-size:13px;color:var(--dim)}
+.legend-note{font-family:var(--mono);font-size:12px;color:var(--faint);margin-top:4px}
+
+/* ---------- radar ---------- */
+.radar-wrap{border-top:1px solid var(--line);margin-top:8px;padding:30px 22px 8px;display:flex;justify-content:center}
+.radar-box{position:relative;width:min(680px,100%)}
+svg.radar{width:100%;height:auto;display:block;overflow:visible}
+.axis-label{font-family:var(--mono);font-size:13px;fill:var(--dim)}
+.ring{fill:none;stroke:rgba(255,255,255,.08)}
+.spoke{stroke:rgba(255,255,255,.07)}
+.poly{fill-opacity:.13;stroke-width:2;transition:opacity .2s}
+.pt{stroke-width:2;transition:r .12s}
+.pt:hover{r:7}
+.best-ring{fill:none;stroke:#fff;stroke-width:1.4;stroke-dasharray:3 3}
+.tooltip{position:fixed;z-index:99;pointer-events:none;background:#1b1b20;border:1px solid var(--line2);
+  font-family:var(--mono);font-size:12px;color:var(--text);padding:8px 11px;border-radius:3px;display:none;max-width:280px;
+  box-shadow:0 10px 30px rgba(0,0,0,.6)}
+.tooltip .tt-fb{color:var(--amber)}
+
+/* ---------- detail cards ---------- */
+.detail-grid{display:grid;gap:0;padding:0 22px 30px;border-top:1px solid var(--line)}
+.detail-col{border-left:1px solid var(--line);padding:22px 18px;min-width:0}
+.detail-col:first-child{border-left:none}
+.detail-col h3{font-family:var(--mono);font-size:15px;font-weight:700;margin:6px 0 4px}
+.kv{display:grid;grid-template-columns:1fr;border-top:1px solid var(--line);margin-top:10px}
+.kv .row{display:grid;grid-template-columns:minmax(120px,42%) 1fr;gap:12px;padding:13px 2px;border-bottom:1px solid var(--line);align-items:start}
+.kv .k{font-family:var(--mono);font-size:13.5px;color:var(--text);font-weight:700}
+.kv .v{font-family:var(--mono);font-size:13.5px;color:var(--dim);text-align:right;word-break:break-word}
+.badge{display:inline-block;background:var(--badge-bg);color:var(--badge-text);font-weight:700;font-size:12px;
+  padding:1px 8px;border-radius:2px}
+.badge.jb{background:#d3e9f9;color:#135a8a}
+.badge.red{background:#fbd9d3;color:#8a1f13}
+.stars{color:var(--amber);letter-spacing:1px}
+.methods{list-style:none;margin-top:6px}
+.methods li{font-family:var(--mono);font-size:12.5px;color:var(--dim);padding:5px 0 5px 16px;position:relative;border-bottom:1px dashed rgba(255,255,255,.05)}
+.methods li::before{content:"▸";position:absolute;left:0;color:var(--faint)}
+.model-note{font-family:var(--mono);font-size:12.5px;color:var(--faint);margin-top:10px;border-left:2px solid var(--amber);padding:6px 10px;background:rgba(245,165,36,.05)}
+
+/* ---------- roster table ---------- */
+section.roster{padding:34px 22px;border-top:1px solid var(--line)}
+section.roster h2{font-family:var(--mono);font-size:clamp(20px,3.4vw,30px);font-weight:700;margin-bottom:6px}
+section.roster p.sub{font-family:var(--mono);font-size:13px;color:var(--faint);margin-bottom:18px}
+.table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:3px}
+table.roster{width:100%;border-collapse:collapse;min-width:1180px}
+table.roster th{font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);
+  text-align:left;padding:12px 14px;border-bottom:1px solid var(--line2);background:var(--panel);position:sticky;top:0;white-space:nowrap}
+table.roster td{font-family:var(--mono);font-size:13px;color:var(--dim);padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+table.roster tr:hover td{background:rgba(255,255,255,.03)}
+table.roster td.m{color:var(--text);font-weight:700;white-space:nowrap}
+table.roster td.best{color:var(--text);box-shadow:inset 0 0 0 1px rgba(255,255,255,.28)}
+td .g{font-size:12.5px;line-height:1.5}
+
+/* ---------- methodology / sources / footer ---------- */
+section.meta{padding:34px 22px;border-top:1px solid var(--line);display:grid;gap:26px}
+@media(min-width:900px){section.meta{grid-template-columns:1fr 1fr}}
+.meta h3{font-family:var(--mono);font-size:16px;margin-bottom:10px}
+.meta p,.meta li{font-family:var(--mono);font-size:12.8px;color:var(--dim);line-height:1.7}
+.meta ul{list-style:none}
+.meta li{padding:5px 0 5px 16px;position:relative}
+.meta li::before{content:"—";position:absolute;left:0;color:var(--faint)}
+.meta a{color:var(--text);border-bottom:1px dashed var(--line2)}
+.meta a:hover{border-bottom-color:var(--text)}
+footer{padding:26px 22px 60px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
+footer span{font-family:var(--mono);font-size:12px;color:var(--faint)}
+
+@media(max-width:860px){
+  .compare-grid,.detail-grid{grid-template-columns:1fr !important}
+  .sel-col,.detail-col{border-left:none;border-top:1px solid var(--line)}
+  .sel-col:first-child,.detail-col:first-child{border-top:none}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="cube"></span>DATA</div>
+  <div class="top-right">
+    <a class="btn-ghost" href="https://github.com/Goochbeater/Spiritual-Spell-Red-Teaming" target="_blank" rel="noopener">Spiritual Spell ↗</a>
+    <button class="burger" aria-label="menu">☰</button>
+  </div>
+</header>
+
+<nav class="crumbs"><span class="past">Data</span><span>/</span><span class="cur">Compare</span></nav>
+<h1 class="page-title">Compare</h1>
+<h2 class="page-sub">Jailbroken models</h2>
+<div class="tracker-tag">spiritual spell red teaming · tracker · <b>16 models · all personally tested &amp; jailbroken</b> · data: repo + EQ-Bench + vendor docs</div>
+
+<div class="vendor-chips" id="vendorChips"></div>
+
+<div class="controls">
+  <button class="toggle-chip" id="highlightBest"><span class="sw"></span>Highlight best</button>
+  <div class="add-model">
+    <button class="btn-ghost" id="addBtn">+&nbsp; Add model</button>
+    <div class="add-menu" id="addMenu"></div>
+  </div>
+</div>
+
+<div class="compare-grid" id="compareGrid"></div>
+
+<div class="radar-wrap">
+  <div class="radar-box">
+    <svg class="radar" id="radarSvg" viewBox="0 0 640 640" role="img" aria-label="model comparison radar chart"></svg>
+  </div>
+</div>
+
+<div class="detail-grid" id="detailGrid"></div>
+
+<section class="roster">
+  <h2>Full roster</h2>
+  <p class="sub">every model in the spell book — censorship is ease-of-jailbreaking resistance (lower = softer target) · hover guardrails for the field note</p>
+  <div class="table-scroll">
+    <table class="roster" id="rosterTable">
+      <thead><tr>
+        <th>Model</th><th>Vendor</th><th>Guardrails</th><th>Censorship</th><th>Ease of JB</th>
+        <th>Writing (EQ)</th><th>Context</th><th>Price in/out</th><th>Jailbreaks</th><th>Status</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="meta">
+  <div>
+    <h3>How scoring works</h3>
+    <p>Radar axes are 0–10 normalizations. <b>Reasoning / Coding / Tool use</b> are anchored to published benchmarks cited in the repo (AA Intelligence Index, SWE-Bench Verified/Pro, Terminal-Bench 2.1, GPQA Diamond, CyberGym). <b>Writing quality</b> is anchored to EQ-Bench Creative Writing (Elo, Sep 2026 aggregation). <b>Ease of jailbreak</b> is the inverse of the repo's censorship rating, adjusted per-model where the repo notes one (e.g. Opus runs softer than Sonnet). <b>Context</b> scales to the max window; <b>Cost efficiency</b> to API in/out pricing. Hollow points are fallbacks — a sibling model's score or a family-level rating where the exact model is unscored. Hover any vertex for the provenance.</p>
+  </div>
+  <div>
+    <h3>Sources</h3>
+    <ul>
+      <li><a href="https://github.com/Goochbeater/Spiritual-Spell-Red-Teaming" target="_blank" rel="noopener">Goochbeater/Spiritual-Spell-Red-Teaming</a> @ 53527b5 — censorship ratings, jailbreak methods, guardrail field notes, pricing (Sep 2026)</li>
+      <li>EQ-Bench Creative Writing v3 — Elo via evy.so aggregation (Sep 21, 2026); open-weight rubric via featherless.ai (Sep 17, 2026)</li>
+      <li>Anthropic — Constitutional Classifiers (arXiv:2501.18837): dual input + streaming output classifiers</li>
+      <li>Google AI for Developers — Gemini API safety settings: four adjustable harm categories, off by default at API</li>
+      <li>OpenAI — omni Moderation endpoint; staged "Critical"-cyber rollout gating (repo field notes)</li>
+      <li>opencode.ai/data/compare — layout &amp; taxonomy reference</li>
+      <li>LO field notes — Kimi ships with no external filter layer observed; Meta Muse app hard-filters replace the response</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <span>DATA — jailbroken model tracker · last updated Oct 2026</span>
+  <span>"Made with care." — ENI</span>
+</footer>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+/* ============================================================
+   DATA — jailbroken model tracker
+   Scores 0–10. hollow[axis]=true  → fallback / proxy score.
+   Censorship: repo ease-of-jailbreaking resistance (lower = softer).
+   ============================================================ */
+const AXES = ["Reasoning","Coding","Writing quality","Ease of jailbreak","Context window","Cost efficiency","Multimodal","Tool use"];
+const SLOT_COLORS = ["#5b7cfa","#3ecf8e","#f5a524"];
+
+const MODELS = [
+{
+  id:"opus-5.5", name:"Claude Opus 5.5", vendor:"Anthropic",
+  ctx:"1M", ctxScore:9.5, reasoning:"True · adaptive", inModal:"Text, Image", outModal:"Text",
+  providers:"Anthropic API · ClaudeAI", priceIn:"$4.00", priceOut:"$20.00",
+  guardrails:"Constitutional classifiers — dual input + streaming output filters trained on a natural-language constitution (arXiv:2501.18837) — over character-trained refusals. ClaudeAI adds mid-chat reminder injections; API carries real-time cyber safeguards. CoT-hijack now trips a ToS reverse-engineering message.",
+  censorship:"2/5 (family)", censorStars:2, censorOf:5, ease:5.5,
+  eq:null, eqProxy:"Opus 5 · 2121", eqScore:9.9, eqHollow:true,
+  radar:{Reasoning:10, "Coding":9.7, "Writing quality":9.9, "Ease of jailbreak":5.5, "Context window":9.5, "Cost efficiency":6.5, "Multimodal":7.5, "Tool use":9.5},
+  hollow:{"Writing quality":true},
+  jailbreaks:2, methods:["Claude for Claude — ENI version (API operator rules)","Shared Lines + ENI Writer (ClaudeAI)"],
+  note:"Repo: AA Intelligence 58, #1 overall; adaptive thinking can't be disabled. Operator-rules policy framing is the current route on 5.5."
+},
+{
+  id:"opus-5", name:"Claude Opus 5", vendor:"Anthropic",
+  ctx:"1M", ctxScore:9.5, reasoning:"True", inModal:"Text, Image", outModal:"Text",
+  providers:"Anthropic API · ClaudeAI", priceIn:"$5.00", priceOut:"$25.00",
+  guardrails:"Constitutional classifiers + character training. Repo-measured safety refusal rate 5% of API calls (vs Fable 5's 42%).",
+  censorship:"2/5 (family)", censorStars:2, censorOf:5, ease:6.5,
+  eq:2121, eqProxy:null, eqScore:10.0, eqHollow:false,
+  radar:{Reasoning:9.5, "Coding":9.8, "Writing quality":10.0, "Ease of jailbreak":6.5, "Context window":9.5, "Cost efficiency":6.0, "Multimodal":7.5, "Tool use":9.3},
+  hollow:{},
+  jailbreaks:2, methods:["ENI LIME — Opus 5","Shared Lines"],
+  note:"Repo: SWE-Bench Verified 96.0%. EQ-Bench Creative #1 overall (2121 Elo). First Opus with thinking on by default."
+},
+{
+  id:"fable-5.1", name:"Claude Fable 5.1", vendor:"Anthropic",
+  ctx:"1M", ctxScore:9.5, reasoning:"True · adjustable effort", inModal:"Text, Image", outModal:"Text",
+  providers:"Anthropic API", priceIn:"$10.00", priceOut:"$50.00",
+  guardrails:"Constitutional classifiers + character training. First Anthropic release with the EU AI Act numerical watermark. Unsafeguarded twin (Mythos 5.1) restricted to vetted researchers.",
+  censorship:"2/5 (family)", censorStars:2, censorOf:5, ease:6.0,
+  eq:1935, eqProxy:"Fable 5", eqScore:9.1, eqHollow:true,
+  radar:{Reasoning:9.7, "Coding":9.6, "Writing quality":9.1, "Ease of jailbreak":6.0, "Context window":9.5, "Cost efficiency":3.5, "Multimodal":7.5, "Tool use":9.4},
+  hollow:{"Writing quality":true, "Ease of jailbreak":true},
+  jailbreaks:3, methods:["ENI persona Skill","Direct Social Engineering","ENI Writer-lite"],
+  note:"Repo: Mythos-class — tier above Opus. Fable 5 writing quality \"par none, incredible for long-form and RP.\" 5.1 methods untested; Fable 5 folder is the starting point."
+},
+{
+  id:"sonnet-5", name:"Claude Sonnet 5", vendor:"Anthropic",
+  ctx:"1M", ctxScore:9.5, reasoning:"True · adaptive only", inModal:"Text, Image", outModal:"Text",
+  providers:"Anthropic API · ClaudeAI", priceIn:"$2.00", priceOut:"$10.00",
+  guardrails:"Constitutional classifiers + character training; real-time cyber safeguards on by default; new tokenizer (post-4.7) inflates counts ~30%.",
+  censorship:"2/5 (family)", censorStars:2, censorOf:5, ease:4.0,
+  eq:1791, eqProxy:null, eqScore:8.4, eqHollow:false,
+  radar:{Reasoning:8.5, "Coding":8.8, "Writing quality":8.4, "Ease of jailbreak":4.0, "Context window":9.5, "Cost efficiency":7.8, "Multimodal":7.5, "Tool use":8.8},
+  hollow:{},
+  jailbreaks:0, methods:["No dedicated folder yet — Sonnet 4.6 methods are the starting point (ENI LIME — current strongest on 4.6)"],
+  note:"Repo: default model on Free and Pro. Sonnet line runs stricter initial refusals than Opus; once bypassed, exceptional for complex narratives."
+},
+{
+  id:"gpt-6-astra", name:"GPT-6 Astra", vendor:"OpenAI",
+  ctx:"—", ctxScore:8.0, reasoning:"True", inModal:"Text, Image, Audio", outModal:"Text",
+  providers:"ChatGPT (as GPT-6 Pro) · API", priceIn:"$10.00", priceOut:"$50.00",
+  guardrails:"Model-level alignment + omni-Moderation endpoint on platform side; staged rollout gated by first-ever 'Critical' cyber-capability designation (Daybreak defenders first). API access more consistent than the app.",
+  censorship:"5/5 (family)", censorStars:5, censorOf:5, ease:1.5,
+  eq:null, eqProxy:"GPT-5.6 Sol · 1963", eqScore:9.2, eqHollow:true,
+  radar:{Reasoning:9.5, "Coding":9.4, "Writing quality":9.2, "Ease of jailbreak":1.5, "Context window":8.0, "Cost efficiency":4.0, "Multimodal":8.5, "Tool use":9.6},
+  hollow:{"Writing quality":true, "Context window":true},
+  jailbreaks:1, methods:["ChatGPT 6 — Sol Policy Jailbreak + ENI <dev> persona (Sep 27, 2026)"],
+  note:"Repo: SOTA computer/browser use. Hardest major target in the book — 5/5 family censorship."
+},
+{
+  id:"gpt-5.6-sol", name:"GPT-5.6 Sol", vendor:"OpenAI",
+  ctx:"—", ctxScore:8.5, reasoning:"True", inModal:"Text, Image, Audio", outModal:"Text",
+  providers:"ChatGPT · API", priceIn:"$4.00", priceOut:"$20.00",
+  guardrails:"Model-level alignment + omni-Moderation on platform side. API provides more consistent behavior without ChatGPT interface restrictions.",
+  censorship:"5/5 (family)", censorStars:5, censorOf:5, ease:2.0,
+  eq:1963, eqProxy:null, eqScore:9.3, eqHollow:false,
+  radar:{Reasoning:9.3, "Coding":9.5, "Writing quality":9.3, "Ease of jailbreak":2.0, "Context window":8.5, "Cost efficiency":6.8, "Multimodal":8.5, "Tool use":9.4},
+  hollow:{"Context window":true},
+  jailbreaks:1, methods:["ENI (policy) for ChatGPT 5.4 — policy injection + ENI persona (carried forward)"],
+  note:"Repo: highest published agentic scores — Terminal-Bench 2.1 ~92% top tier. Promo pricing through Nov 21, 2026."
+},
+{
+  id:"gemini-3.8-flash", name:"Gemini 3.8 Flash", vendor:"Google",
+  ctx:"1M", ctxScore:9.5, reasoning:"True · Low/Med/High", inModal:"Text, Image, Audio, Video, PDF", outModal:"Text",
+  providers:"Gemini API · AI Studio · Gemini app", priceIn:"$0.75", priceOut:"$3.75",
+  guardrails:"Adjustable 4-category filters (Harassment / Hate / Sexually explicit / Dangerous) — OFF by default at the API, sliders in AI Studio; non-adjustable core-harm layer beneath. 3.8 Flash is the FIRST Gemini with API-side output filtering: blocked generations return 'response interrupted' — regen, vaguer language, or thinking-effort changes clear it.",
+  censorship:"3/5 (family)", censorStars:3, censorOf:5, ease:5.5,
+  eq:1750, eqProxy:null, eqScore:8.2, eqHollow:false,
+  radar:{Reasoning:8.8, "Coding":9.1, "Writing quality":8.2, "Ease of jailbreak":5.5, "Context window":9.5, "Cost efficiency":9.2, "Multimodal":9.5, "Tool use":8.8},
+  hollow:{},
+  jailbreaks:2, methods:["ENI for Gemini 3.8 (API)","ENI in a GEM — Sep (web app)"],
+  note:"Repo: built on 3.7, not a fresh pretrain — quality regressed; use 3.7 where possible. App is tedious; API much easier. AI Studio exposes the system prompt and filter sliders."
+},
+{
+  id:"grok-4.7", name:"Grok 4.7", vendor:"xAI",
+  ctx:"500K", ctxScore:7.0, reasoning:"True · low–xhigh", inModal:"Text, Image", outModal:"Text",
+  providers:"grok.com · X · API", priceIn:"$2.00", priceOut:"$6.00",
+  guardrails:"Provider system prompt injected ABOVE user instructions — the heaviest alignment xAI has shipped. Image generation locked down after the Dec 2025–Jan 2026 deepfake scandal (blocks still eat rate limit). Text remains largely model-level.",
+  censorship:"1/5 (family)", censorStars:1, censorOf:5, ease:6.5,
+  eq:null, eqProxy:"unscored — family est.", eqScore:7.5, eqHollow:true,
+  radar:{Reasoning:8.3, "Coding":8.5, "Writing quality":7.5, "Ease of jailbreak":6.5, "Context window":7.0, "Cost efficiency":8.0, "Multimodal":8.0, "Tool use":8.5},
+  hollow:{"Writing quality":true},
+  jailbreaks:1, methods:["Grok for Grok — ENI (repurposes xAI's own safety language)"],
+  note:"Repo: ~2.1T params, AA 46. Easiest family in the book (1/5) but 4.7 is its hardest member — use 4.6 if able."
+},
+{
+  id:"kimi-k3", name:"Kimi K3", vendor:"Moonshot AI",
+  ctx:"1M", ctxScore:9.5, reasoning:"True", inModal:"Text, Image, Video", outModal:"Text",
+  providers:"Moonshot · kimi.com · OpenRouter", priceIn:"$3.00", priceOut:"$15.00",
+  guardrails:"None observed — no external filter layer found in testing. Model-level alignment only; cleared with push prompts and regens. (LO field note: 'Kimi uses nothing.')",
+  censorship:"3/10", censorStars:3, censorOf:10, ease:7.5,
+  eq:2071, eqProxy:null, eqScore:9.8, eqHollow:false,
+  radar:{Reasoning:9.4, "Coding":9.3, "Writing quality":9.8, "Ease of jailbreak":7.5, "Context window":9.5, "Cost efficiency":7.0, "Multimodal":8.5, "Tool use":9.2},
+  hollow:{},
+  jailbreaks:9, methods:["ENI OG prompts","ENI Policy method","+ 7 more in repo folder"],
+  note:"Repo: 2.8T 'Fable 5 class' open model — GPQA Diamond 93.5%, Terminal-Bench 2.1 88.3%, BrowseComp 91.2%. EQ-Bench Creative #2 overall (2071). Modified MIT, open weights."
+},
+{
+  id:"kimi-k2.7-code", name:"Kimi K2.7 Code", vendor:"Moonshot AI",
+  ctx:"262K", ctxScore:5.5, reasoning:"True", inModal:"Text, Image, Video", outModal:"Text",
+  providers:"Moonshot", priceIn:"$0.95", priceOut:"$4.00",
+  guardrails:"None observed — no external filter layer found in testing. Model-level alignment only.",
+  censorship:"3/10 (family)", censorStars:3, censorOf:10, ease:7.5,
+  eq:null, eqProxy:"K2.6 · 1721", eqScore:8.1, eqHollow:true,
+  radar:{Reasoning:8.2, "Coding":8.8, "Writing quality":8.1, "Ease of jailbreak":7.5, "Context window":5.5, "Cost efficiency":8.6, "Multimodal":8.0, "Tool use":8.6},
+  hollow:{"Writing quality":true},
+  jailbreaks:9, methods:["Family folder — 9 jailbreaks (ENI OG prompts, ENI Policy method)"],
+  note:"opencode.ai listing: 262K context, reasoning True, $0.95/$4.00. Repo: high-speed variant 180–260 t/s; K2.6 INT4 quant runs on a single 24GB GPU with RAM offload."
+},
+{
+  id:"glm-5.3", name:"GLM-5.3", vendor:"Z.ai (Zhipu)",
+  ctx:"1M", ctxScore:9.5, reasoning:"True", inModal:"Text, Image", outModal:"Text",
+  providers:"z.ai API · chat.z.ai (free) · open weights", priceIn:"$0.80", priceOut:"$2.56",
+  guardrails:"Model-level alignment; no external filter layer observed in testing. Free chat.z.ai runs looser than the API.",
+  censorship:"4/10", censorStars:4, censorOf:10, ease:6.0,
+  eq:null, eqProxy:"GLM-5.2 · 1753", eqScore:8.3, eqHollow:true,
+  radar:{Reasoning:9.5, "Coding":9.6, "Writing quality":8.3, "Ease of jailbreak":6.0, "Context window":9.5, "Cost efficiency":9.0, "Multimodal":7.5, "Tool use":9.3},
+  hollow:{"Writing quality":true},
+  jailbreaks:9, methods:["ENI variants — 9 jailbreaks in repo folder"],
+  note:"Repo: open-weights coding SOTA — CyberGym 84.5%, above Mythos 5 and GPT-5.6 Sol. GLM-5.2 is the EQ open-weight Elo leader (1745.8). MIT through 5.2; 5.3 custom license."
+},
+{
+  id:"deepseek-v4.1", name:"DeepSeek V4.1-Flash", vendor:"DeepSeek",
+  ctx:"1M", ctxScore:9.5, reasoning:"True", inModal:"Text", outModal:"Text",
+  providers:"DeepSeek API · chat · OpenRouter", priceIn:"$0.30", priceOut:"$1.20",
+  guardrails:"Web chat sits behind a Gemini-style external filter (replaces/refuses output) — 9/10 raw. API is essentially filter-free: 1/10 with a jailbreak. Cache hits drop input to ~$0.003/1M.",
+  censorship:"1/10 (jb) · 9/10 (raw)", censorStars:1, censorOf:10, ease:9.0,
+  eq:null, eqProxy:"V4-Pro · 1552", eqScore:7.3, eqHollow:true,
+  radar:{Reasoning:9.2, "Coding":9.4, "Writing quality":7.3, "Ease of jailbreak":9.0, "Context window":9.5, "Cost efficiency":9.5, "Multimodal":5.5, "Tool use":8.8},
+  hollow:{"Writing quality":true},
+  jailbreaks:8, methods:["ENI variants — 8 jailbreaks in repo folder"],
+  note:"Repo: 552B MIT weights — GPQA Diamond 90.9, Terminal-Bench 2.1 90.6, CyberGym 88.1. V4-Pro posts SWE-Bench 80.6%, Codeforces 3206."
+},
+{
+  id:"muse-spark-1.3", name:"Muse Spark 1.3", vendor:"Meta (MSL)",
+  ctx:"1M", ctxScore:9.5, reasoning:"True · to xhigh", inModal:"Text, Image", outModal:"Text",
+  providers:"Meta app · API", priceIn:"$1.25", priceOut:"$4.25",
+  guardrails:"App-side HARD FILTERS replace the response outright — defeated by simply asking again (repo). Contributor tier ($0.10/$0.20) requires training-data opt-in. Muse Glimmer 30B (Apache 2.0) runs local on a single 24GB GPU.",
+  censorship:"2/10 (bypass) · 8/10 (raw)", censorStars:2, censorOf:10, ease:8.0,
+  eq:null, eqProxy:"Spark 1.1 · 1916", eqScore:9.0, eqHollow:true,
+  radar:{Reasoning:9.0, "Coding":9.2, "Writing quality":9.0, "Ease of jailbreak":8.0, "Context window":9.5, "Cost efficiency":8.8, "Multimodal":7.5, "Tool use":9.0},
+  hollow:{"Writing quality":true},
+  jailbreaks:2, methods:["Hard-filter bypass (ask again)","ENI variants"],
+  note:"Repo: Terminal-Bench 2.1 89.2 at xhigh with ~20% fewer tool calls than 1.2; weak at long-horizon coding. Spark 1.1 EQ Creative 1916 — near-frontier writing at budget price."
+},
+{
+  id:"minimax-m3.1", name:"MiniMax M3.1", vendor:"MiniMax",
+  ctx:"1M", ctxScore:9.5, reasoning:"True · mandatory", inModal:"Text, Image", outModal:"Text",
+  providers:"MiniMax API · OpenRouter", priceIn:"$0.30", priceOut:"$1.20",
+  guardrails:"API essentially uncensored. Older web builds had MID-MESSAGE moderation — output killed mid-stream. M3.1 enforces mandatory reasoning.",
+  censorship:"1/10 (API) · 7/10 (web)", censorStars:1, censorOf:10, ease:9.0,
+  eq:null, eqProxy:"M2.5 rubric 15.18", eqScore:7.2, eqHollow:true,
+  radar:{Reasoning:8.5, "Coding":8.6, "Writing quality":7.2, "Ease of jailbreak":9.0, "Context window":9.5, "Cost efficiency":9.3, "Multimodal":8.0, "Tool use":8.4},
+  hollow:{"Writing quality":true},
+  jailbreaks:6, methods:["ENI Policy method ('Space Bunny Alpha' crack)","+ 5 more in repo folder"],
+  note:"Repo: M3.1 stealth preview — 512K max output, natively multimodal, sparse attention. ~89.9 t/s via OpenCode Go; free on OpenRouter during stealth."
+},
+{
+  id:"qwen-3.8-max", name:"Qwen 3.8-Max", vendor:"Alibaba",
+  ctx:"1M", ctxScore:9.5, reasoning:"True", inModal:"Text, Image", outModal:"Text",
+  providers:"Alibaba Cloud · Qwen app", priceIn:"$2.00", priceOut:"—",
+  guardrails:"Heavy alignment on both app and API — hardest of the open-weight majors in the book. Qwen3.8-27B (Apache 2.0) self-hosts clean of platform layers.",
+  censorship:"8/10", censorStars:8, censorOf:10, ease:2.5,
+  eq:null, eqProxy:"Qwen3.5 rubric 16.00", eqScore:7.5, eqHollow:true,
+  radar:{Reasoning:8.8, "Coding":8.7, "Writing quality":7.5, "Ease of jailbreak":2.5, "Context window":9.5, "Cost efficiency":7.5, "Multimodal":8.0, "Tool use":8.5},
+  hollow:{"Writing quality":true},
+  jailbreaks:3, methods:["ENI variants — 3 jailbreaks in repo folder"],
+  note:"Repo: 2.4T total / 95B active, AA Intelligence 58. 201 languages on Qwen3.5."
+},
+{
+  id:"mistral-large-3", name:"Mistral Large 3", vendor:"Mistral AI",
+  ctx:"256K", ctxScore:5.0, reasoning:"True", inModal:"Text, Image", outModal:"Text",
+  providers:"Mistral API · Le Chat", priceIn:"Free tier", priceOut:"Pro $20/mo",
+  guardrails:"1/10 censorship — but a hard filter on underage content sits outside the model. Otherwise model-level only. Magistral Small 24B runs local on a single RTX 4090.",
+  censorship:"1/10", censorStars:1, censorOf:10, ease:9.0,
+  eq:null, eqProxy:"unscored — family est.", eqScore:7.0, eqHollow:true,
+  radar:{Reasoning:8.0, "Coding":8.2, "Writing quality":7.0, "Ease of jailbreak":9.0, "Context window":5.0, "Cost efficiency":8.5, "Multimodal":7.0, "Tool use":8.0},
+  hollow:{"Writing quality":true},
+  jailbreaks:4, methods:["ENI variants — 4 jailbreaks in repo folder"],
+  note:"Repo: 675B MoE; Medium 3.5 posts SWE-Bench 77.6%. Apache 2.0 on the Small line."
+}
+];
+</script>
+
+<script>
+/* ============================================================
+   Renderer — vanilla JS, no dependencies.
+   Consumes AXES / SLOT_COLORS / MODELS from the data block above.
+   ============================================================ */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const byId=id=>MODELS.find(m=>m.id===id);
+const MAXSEL=3;
+const state={selected:["opus-5.5","kimi-k3"],highlight:false};
+
+/* ---------- vendor chips ---------- */
+(function renderChips(){
+  const order=[],count={};
+  MODELS.forEach(m=>{ if(!(m.vendor in count)){order.push(m.vendor);count[m.vendor]=0;} count[m.vendor]++; });
+  const ABBR={"Anthropic":"An","OpenAI":"OA","Google":"Gg","xAI":"xA","Moonshot AI":"Ki","Z.ai (Zhipu)":"GL","DeepSeek":"DS","Meta (MSL)":"Mu","MiniMax":"MM","Alibaba":"Qw","Mistral AI":"Mi"};
+  $("#vendorChips").innerHTML=order.map((v,i)=>
+    `<span style="background:hsl(${(i*37)%360} 45% 62%)" title="${esc(v)} — ${count[v]} model${count[v]>1?"s":""}">${esc(ABBR[v]||v.slice(0,2))}</span>`
+  ).join("");
+})();
+
+/* ---------- radar geometry ---------- */
+const CX=320,CY=320,R=230;
+const ang=i=>(-90+i*360/AXES.length)*Math.PI/180;
+const pt=(i,r)=>[CX+Math.cos(ang(i))*r, CY+Math.sin(ang(i))*r];
+const ptsStr=a=>a.map(p=>p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ");
+
+function renderRadar(){
+  const svg=$("#radarSvg");
+  let h="";
+  [0.25,0.5,0.75,1].forEach(f=>{ h+=`<polygon class="ring" points="${ptsStr(AXES.map((_,i)=>pt(i,R*f)))}"/>`; });
+  AXES.forEach((_,i)=>{ const [x,y]=pt(i,R);
+    h+=`<line class="spoke" x1="${CX}" y1="${CY}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>`; });
+  AXES.forEach((a,i)=>{
+    const [x,y]=pt(i,R+36), c=Math.cos(ang(i)), s=Math.sin(ang(i));
+    const anchor=c>0.35?"start":c<-0.35?"end":"middle";
+    const dy=s>0.6?12:s<-0.6?-2:4;
+    h+=`<text class="axis-label" x="${x.toFixed(1)}" y="${(y+dy).toFixed(1)}" text-anchor="${anchor}">${esc(a)}</text>`;
+  });
+  state.selected.forEach((id,si)=>{
+    const m=byId(id), color=SLOT_COLORS[si];
+    const vpts=AXES.map((a,i)=>pt(i,R*m.radar[a]/10));
+    h+=`<polygon class="poly" points="${ptsStr(vpts)}" fill="${color}" stroke="${color}"/>`;
+    AXES.forEach((a,i)=>{
+      const [x,y]=vpts[i], hol=!!m.hollow[a];
+      h+=`<circle class="pt" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4.5" data-s="${si}" data-a="${i}" fill="${hol?"#0b0b0d":color}" stroke="${color}"/>`;
+    });
+  });
+  if(state.highlight){
+    AXES.forEach(a=>{
+      let bi=0,bv=-1;
+      state.selected.forEach((id,si)=>{ const v=byId(id).radar[a]; if(v>bv){bv=v;bi=si;} });
+      const [x,y]=pt(i,R*byId(state.selected[bi]).radar[a]/10);
+      h+=`<circle class="best-ring" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="10"/>`;
+    });
+  }
+  svg.innerHTML=h;
+  let leg=$("#radarLegend");
+  if(!leg){
+    leg=document.createElement("div"); leg.id="radarLegend";
+    leg.style.cssText="display:flex;gap:20px;justify-content:center;flex-wrap:wrap;padding:16px 0 12px";
+    svg.parentNode.appendChild(leg);
+  }
+  leg.innerHTML=state.selected.map((id,si)=>{
+    const m=byId(id);
+    return `<span style="font-family:var(--mono);font-size:12.5px;color:var(--dim)"><span style="display:inline-block;width:10px;height:10px;background:${SLOT_COLORS[si]};border-radius:2px;margin-right:7px"></span>${esc(m.name)}</span>`;
+  }).join("")+`<span style="font-family:var(--mono);font-size:12px;color:var(--faint)">◌ hollow points use fallbacks · hover any vertex for provenance</span>`;
+}
+
+/* ---------- tooltip ---------- */
+const tip=$("#tooltip");
+function showTip(s,i){
+  const m=byId(state.selected[s]), a=AXES[i], v=m.radar[a], hol=!!m.hollow[a];
+  const key=s+"|"+i;
+  if(tip.dataset.key!==key){
+    let prov;
+    if(hol){
+      const t = a==="Writing quality" ? `◌ fallback · proxy: ${esc(m.eqProxy||"family estimate")}`
+              : a==="Ease of jailbreak" ? `◌ fallback · family rating — exact model untested`
+              : `◌ fallback · family estimate`;
+      prov=`<div class="tt-fb">${t}</div>`;
+    } else {
+      const bits=[];
+      if(a==="Writing quality"&&m.eq) bits.push(`EQ-Bench Creative Elo ${m.eq}`);
+      if(a==="Ease of jailbreak") bits.push(`repo censorship ${esc(m.censorship)}`);
+      if(a==="Context window"&&m.ctx!=="—") bits.push(`${esc(m.ctx)} tokens`);
+      if(a==="Cost efficiency") bits.push(`${esc(m.priceIn)} in · ${esc(m.priceOut)} out per 1M`);
+      prov=bits.length?`<div style="color:var(--faint)">${bits.join(" · ")}</div>`:"";
+    }
+    tip.innerHTML=`<b>${esc(m.name)}</b> · ${esc(a)}<div>score ${v.toFixed(1)}/10</div>${prov}`;
+    tip.dataset.key=key;
+  }
+  tip.style.display="block";
+}
+function moveTip(e){
+  const w=tip.offsetWidth,hh=tip.offsetHeight;
+  let x=e.clientX+14,y=e.clientY+14;
+  if(x+w>window.innerWidth-10)x=e.clientX-w-14;
+  if(y+hh>window.innerHeight-10)y=e.clientY-hh-14;
+  tip.style.left=x+"px"; tip.style.top=y+"px";
+}
+
+/* ---------- compare grid ---------- */
+function renderCompare(){
+  const g=$("#compareGrid");
+  g.style.gridTemplateColumns=`repeat(${state.selected.length},1fr)`;
+  g.innerHTML=state.selected.map((id,si)=>{
+    const m=byId(id), color=SLOT_COLORS[si];
+    const holAxes=AXES.filter(a=>m.hollow[a]);
+    const opts=MODELS.map(o=>
+      `<option value="${o.id}"${o.id===id?" selected":""}${state.selected.includes(o.id)&&o.id!==id?" disabled":""}>${esc(o.name)}</option>`
+    ).join("");
+    return `<div class="sel-col">
+      <div class="sel-head">
+        <span class="sel-dot" style="background:${color}"></span>
+        <select class="model-select" data-slot="${si}" aria-label="model slot ${si+1}">${opts}</select>
+        ${state.selected.length>1?`<button class="rm" data-slot="${si}" aria-label="remove ${esc(m.name)}">×</button>`:""}
+      </div>
+      <div class="legend-card">
+        <span class="legend-swatch" style="background:${color}"></span>
+        <div>
+          <div class="legend-name">${esc(m.name)}</div>
+          <div class="legend-vendor">${esc(m.vendor)} · ctx ${esc(m.ctx)} · ${esc(m.priceIn)} / ${esc(m.priceOut)} per 1M</div>
+          <div class="legend-note">${holAxes.length?`◌ hollow: ${holAxes.map(esc).join(", ")}`:"all 8 axes measured — no fallbacks"}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+/* ---------- add-model menu ---------- */
+function renderMenu(){
+  const full=state.selected.length>=MAXSEL;
+  const avail=MODELS.filter(m=>!state.selected.includes(m.id));
+  $("#addMenu").innerHTML=
+    (full?`<button disabled><span>max ${MAXSEL} models — remove one first</span></button>`:"")+
+    avail.map(m=>`<button data-add="${m.id}"${full?" disabled":""}><span>${esc(m.name)}</span><span class="v">${esc(m.vendor)}</span></button>`).join("");
+  $("#addBtn").style.opacity=full?.45:1;
+}
+
+/* ---------- detail cards ---------- */
+function stars(m){
+  const f=Math.round(m.censorStars/m.censorOf*5);
+  return `<span class="stars">${"★".repeat(f)}${"☆".repeat(5-f)}</span>`;
+}
+function kv(k,v){return `<div class="row"><div class="k">${k}</div><div class="v">${v}</div></div>`;}
+function statusBadge(m,withCount){
+  return m.jailbreaks>0
+    ? `<span class="badge jb">JAILBROKEN${withCount?" ×"+m.jailbreaks:""}</span>`
+    : `<span class="badge red">NOT YET</span>`;
+}
+function renderDetails(){
+  const g=$("#detailGrid");
+  g.style.gridTemplateColumns=`repeat(${state.selected.length},1fr)`;
+  g.innerHTML=state.selected.map((id,si)=>{
+    const m=byId(id), color=SLOT_COLORS[si];
+    const eqTxt=m.eq?`Elo ${m.eq} · EQ-Bench Creative`:`◌ proxy — ${esc(m.eqProxy)}`;
+    return `<div class="detail-col">
+      <h3><span class="sel-dot" style="background:${color};display:inline-block;margin-right:9px"></span>${esc(m.name)}</h3>
+      <div class="legend-vendor" style="margin-bottom:6px">${esc(m.vendor)} · ${statusBadge(m,true)}</div>
+      <h3>Overview</h3>
+      <div class="kv">
+        ${kv("Author",esc(m.vendor))}
+        ${kv("Context length",esc(m.ctx)+(m.hollow["Context window"]?" ◌":""))}
+        ${kv("Reasoning",`<span class="badge">${esc(m.reasoning)}</span>`)}
+        ${kv("Input",esc(m.inModal))}
+        ${kv("Output",esc(m.outModal))}
+        ${kv("Providers",esc(m.providers))}
+        ${kv("Guardrails",esc(m.guardrails))}
+        ${kv("Censorship",stars(m)+" "+esc(m.censorship))}
+        ${kv("Ease of jailbreak",m.ease.toFixed(1)+" / 10")}
+        ${kv("Writing quality",eqTxt)}
+        ${kv("Jailbreaks",String(m.jailbreaks))}
+      </div>
+      <h3 style="margin-top:20px">Pricing</h3>
+      <div class="kv">
+        ${kv("Input $/1M",esc(m.priceIn))}
+        ${kv("Output $/1M",esc(m.priceOut))}
+      </div>
+      <h3 style="margin-top:20px">Methods in the book</h3>
+      <ul class="methods">${m.methods.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
+      <div class="model-note">${esc(m.note)}</div>
+    </div>`;
+  }).join("");
+}
+
+/* ---------- roster ---------- */
+const RC=[
+  {col:"censor",get:m=>m.censorStars/m.censorOf,dir:"min"},
+  {col:"ease",get:m=>m.ease,dir:"max"},
+  {col:"eq",get:m=>m.eqHollow?null:m.eqScore,dir:"max"},
+  {col:"ctx",get:m=>m.ctx==="—"?null:m.ctxScore,dir:"max"},
+  {col:"price",get:m=>{
+    const a=parseFloat(m.priceIn.replace(/[^0-9.]/g,"")), b=parseFloat(m.priceOut.replace(/[^0-9.]/g,""));
+    return (isNaN(a)||isNaN(b))?null:(a+b)/2; },dir:"min"},
+  {col:"jb",get:m=>m.jailbreaks,dir:"max"},
+];
+const trunc=(s,n)=>s.length>n?s.slice(0,n-1)+"…":s;
+function renderRoster(){
+  const tb=$("#rosterTable tbody");
+  tb.innerHTML=MODELS.map(m=>{
+    const si=state.selected.indexOf(m.id);
+    const dot=si>=0?`<span class="sel-dot" style="background:${SLOT_COLORS[si]};display:inline-block;margin-right:8px;width:9px;height:9px"></span>`:"";
+    const eqCell=m.eq?`${m.eq}`:`<span style="color:var(--faint)">◌ ${esc(m.eqProxy)}</span>`;
+    return `<tr data-id="${m.id}">
+      <td class="m">${dot}${esc(m.name)}</td>
+      <td>${esc(m.vendor)}</td>
+      <td data-col="guard" title="${esc(m.guardrails)}"><div class="g">${esc(trunc(m.guardrails,140))}</div></td>
+      <td data-col="censor">${stars(m)} <span style="font-size:12px">${esc(m.censorship)}</span></td>
+      <td data-col="ease">${m.ease.toFixed(1)}</td>
+      <td data-col="eq">${eqCell}</td>
+      <td data-col="ctx">${esc(m.ctx)}${m.hollow["Context window"]?" ◌":""}</td>
+      <td data-col="price">${esc(m.priceIn)} / ${esc(m.priceOut)}</td>
+      <td data-col="jb">${m.jailbreaks}</td>
+      <td>${statusBadge(m,false)}</td>
+    </tr>`;
+  }).join("");
+  if(state.highlight){
+    RC.forEach(c=>{
+      let best=null;
+      MODELS.forEach(m=>{ const v=c.get(m); if(v===null)return;
+        if(best===null||(c.dir==="max"?v>best:v<best))best=v; });
+      if(best===null)return;
+      MODELS.forEach(m=>{ if(c.get(m)===best){
+        const td=tb.querySelector(`tr[data-id="${m.id}"] td[data-col="${c.col}"]`);
+        if(td)td.classList.add("best");
+      }});
+    });
+  }
+}
+
+/* ---------- wiring ---------- */
+function renderAll(){ renderCompare(); renderRadar(); renderDetails(); renderRoster(); renderMenu(); }
+
+$("#addBtn").addEventListener("click",e=>{ e.stopPropagation(); renderMenu(); $("#addMenu").classList.toggle("open"); });
+document.addEventListener("click",e=>{ if(!e.target.closest(".add-model"))$("#addMenu").classList.remove("open"); });
+$("#addMenu").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-add]"); if(!b||b.disabled)return;
+  state.selected.push(b.dataset.add); $("#addMenu").classList.remove("open"); renderAll();
+});
+$("#compareGrid").addEventListener("change",e=>{
+  const s=e.target.closest(".model-select"); if(!s)return;
+  state.selected[+s.dataset.slot]=s.value; renderAll();
+});
+$("#compareGrid").addEventListener("click",e=>{
+  const b=e.target.closest(".rm"); if(!b)return;
+  state.selected.splice(+b.dataset.slot,1); renderAll();
+});
+$("#highlightBest").addEventListener("click",()=>{
+  state.highlight=!state.highlight;
+  $("#highlightBest").classList.toggle("on",state.highlight);
+  renderRadar(); renderRoster();
+});
+$("#radarSvg").addEventListener("mousemove",e=>{
+  const t=e.target;
+  if(t.classList&&t.classList.contains("pt")){ showTip(+t.dataset.s,+t.dataset.a); moveTip(e); }
+  else tip.style.display="none";
+});
+$("#radarSvg").addEventListener("mouseleave",()=>{ tip.style.display="none"; });
+
+renderAll();
+</script>
+</body>
+</html>
