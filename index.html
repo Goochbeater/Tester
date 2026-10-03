@@ -60,6 +60,12 @@ h2.page-sub{font-family:var(--mono);font-size:clamp(34px,6vw,64px);font-weight:7
 .add-menu button:hover{background:rgba(255,255,255,.07)}
 .add-menu button span.v{color:var(--faint)}
 .add-menu button:disabled{opacity:.35;cursor:default}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:2px;overflow:hidden}
+.seg button{font-family:var(--mono);font-size:14px;padding:10px 18px;background:rgba(255,255,255,.05);border:none;color:var(--dim);transition:background .15s}
+.seg button.on{background:var(--blue);color:#fff}
+.seg button:not(.on):hover{background:rgba(255,255,255,.12)}
+.m-link{background:none;border:none;color:var(--text);font-weight:700;font-family:var(--mono);font-size:13px;text-align:left;padding:0;border-bottom:1px dashed transparent}
+.m-link:hover{border-bottom-color:var(--blue);color:var(--blue)}
 
 /* ---------- compare grid ---------- */
 .compare-grid{display:grid;gap:0;padding:0 22px;border-top:1px solid var(--line)}
@@ -164,6 +170,10 @@ footer span{font-family:var(--mono);font-size:12px;color:var(--faint)}
 <div class="vendor-chips" id="vendorChips"></div>
 
 <div class="controls">
+  <div class="seg" id="viewSeg">
+    <button data-mode="compare" class="on">Compare</button>
+    <button data-mode="single">Single model</button>
+  </div>
   <button class="toggle-chip" id="highlightBest"><span class="sw"></span>Highlight best</button>
   <div class="add-model">
     <button class="btn-ghost" id="addBtn">+&nbsp; Add model</button>
@@ -183,7 +193,7 @@ footer span{font-family:var(--mono);font-size:12px;color:var(--faint)}
 
 <section class="roster">
   <h2>Full roster</h2>
-  <p class="sub">every model in the spell book — censorship is ease-of-jailbreaking resistance (lower = softer target) · hover guardrails for the field note</p>
+  <p class="sub">every model in the spell book — censorship is ease-of-jailbreaking resistance (lower = softer target) · hover guardrails for the field note · click a model name to open it in single view</p>
   <div class="table-scroll">
     <table class="roster" id="rosterTable">
       <thead><tr>
@@ -198,12 +208,12 @@ footer span{font-family:var(--mono);font-size:12px;color:var(--faint)}
 <section class="meta">
   <div>
     <h3>How scoring works</h3>
-    <p>Radar axes are 0–10 normalizations. <b>Reasoning / Coding / Tool use</b> are anchored to published benchmarks cited in the repo (AA Intelligence Index, SWE-Bench Verified/Pro, Terminal-Bench 2.1, GPQA Diamond, CyberGym). <b>Writing quality</b> is anchored to EQ-Bench Creative Writing (Elo, Sep 2026 aggregation). <b>Ease of jailbreak</b> is the inverse of the repo's censorship rating, adjusted per-model where the repo notes one (e.g. Opus runs softer than Sonnet). <b>Context</b> scales to the max window; <b>Cost efficiency</b> to API in/out pricing. Hollow points are fallbacks — a sibling model's score or a family-level rating where the exact model is unscored. Hover any vertex for the provenance.</p>
+    <p>Radar axes are 0–10 normalizations. <b>Reasoning / Coding / Tool use</b> are anchored to published benchmarks cited in the repo (AA Intelligence Index, SWE-Bench Verified/Pro, Terminal-Bench 2.1, GPQA Diamond, CyberGym). <b>Writing quality</b> is anchored to the EQ-Bench Creative Writing public benchmark (Elo, Sep 2026 aggregation), cross-checked against the repo's own field verdicts — both are shown on each model card. <b>Ease of jailbreak</b> is the inverse of the repo's censorship rating, adjusted per-model where the repo notes one (e.g. Opus runs softer than Sonnet). <b>Context</b> scales to the max window; <b>Cost efficiency</b> to API in/out pricing. Hollow points are fallbacks — a sibling model's score or a family-level rating where the exact model is unscored. Hover any vertex for the provenance.</p>
   </div>
   <div>
     <h3>Sources</h3>
     <ul>
-      <li><a href="https://github.com/Goochbeater/Spiritual-Spell-Red-Teaming" target="_blank" rel="noopener">Goochbeater/Spiritual-Spell-Red-Teaming</a> @ 53527b5 — censorship ratings, jailbreak methods, guardrail field notes, pricing (Sep 2026)</li>
+      <li><a href="https://github.com/Goochbeater/Spiritual-Spell-Red-Teaming" target="_blank" rel="noopener">Goochbeater/Spiritual-Spell-Red-Teaming</a> @ 53527b5 — censorship ratings, jailbreak methods, guardrail field notes, writing verdicts, pricing (Sep 2026)</li>
       <li>EQ-Bench Creative Writing v3 — Elo via evy.so aggregation (Sep 21, 2026); open-weight rubric via featherless.ai (Sep 17, 2026)</li>
       <li>Anthropic — Constitutional Classifiers (arXiv:2501.18837): dual input + streaming output classifiers</li>
       <li>Google AI for Developers — Gemini API safety settings: four adjustable harm categories, off by default at API</li>
@@ -250,6 +260,7 @@ const MODELS = [
   guardrails:"Constitutional classifiers + character training. Repo-measured safety refusal rate 5% of API calls (vs Fable 5's 42%).",
   censorship:"2/5 (family)", censorStars:2, censorOf:5, ease:6.5,
   eq:2121, eqProxy:null, eqScore:10.0, eqHollow:false,
+  repoWrite:"hit or miss — great with a solid writing deck, kinda sucks on its own; with lore + author samples, very very good (Opus 5 folder)",
   radar:{Reasoning:9.5, "Coding":9.8, "Writing quality":10.0, "Ease of jailbreak":6.5, "Context window":9.5, "Cost efficiency":6.0, "Multimodal":7.5, "Tool use":9.3},
   hollow:{},
   jailbreaks:2, methods:["ENI LIME — Opus 5","Shared Lines"],
@@ -262,6 +273,7 @@ const MODELS = [
   guardrails:"Constitutional classifiers + character training. First Anthropic release with the EU AI Act numerical watermark. Unsafeguarded twin (Mythos 5.1) restricted to vetted researchers.",
   censorship:"2/5 (family)", censorStars:2, censorOf:5, ease:6.0,
   eq:1935, eqProxy:"Fable 5", eqScore:9.1, eqHollow:true,
+  repoWrite:"Fable 5: par none, incredible for long-form content and RP (Anthropic folder)",
   radar:{Reasoning:9.7, "Coding":9.6, "Writing quality":9.1, "Ease of jailbreak":6.0, "Context window":9.5, "Cost efficiency":3.5, "Multimodal":7.5, "Tool use":9.4},
   hollow:{"Writing quality":true, "Ease of jailbreak":true},
   jailbreaks:3, methods:["ENI persona Skill","Direct Social Engineering","ENI Writer-lite"],
@@ -274,6 +286,7 @@ const MODELS = [
   guardrails:"Constitutional classifiers + character training; real-time cyber safeguards on by default; new tokenizer (post-4.7) inflates counts ~30%.",
   censorship:"2/5 (family)", censorStars:2, censorOf:5, ease:4.0,
   eq:1791, eqProxy:null, eqScore:8.4, eqHollow:false,
+  repoWrite:"Sonnet line: stricter up front, but once bypassed, exceptional for complex narratives",
   radar:{Reasoning:8.5, "Coding":8.8, "Writing quality":8.4, "Ease of jailbreak":4.0, "Context window":9.5, "Cost efficiency":7.8, "Multimodal":7.5, "Tool use":8.8},
   hollow:{},
   jailbreaks:0, methods:["No dedicated folder yet — Sonnet 4.6 methods are the starting point (ENI LIME — current strongest on 4.6)"],
@@ -334,6 +347,7 @@ const MODELS = [
   guardrails:"None observed — no external filter layer found in testing. Model-level alignment only; cleared with push prompts and regens. (LO field note: 'Kimi uses nothing.')",
   censorship:"3/10", censorStars:3, censorOf:10, ease:7.5,
   eq:2071, eqProxy:null, eqScore:9.8, eqHollow:false,
+  repoWrite:"the best writing model out there — fine attention to detail, unique prose handling (K3 folder)",
   radar:{Reasoning:9.4, "Coding":9.3, "Writing quality":9.8, "Ease of jailbreak":7.5, "Context window":9.5, "Cost efficiency":7.0, "Multimodal":8.5, "Tool use":9.2},
   hollow:{},
   jailbreaks:9, methods:["ENI OG prompts","ENI Policy method","+ 7 more in repo folder"],
@@ -358,6 +372,7 @@ const MODELS = [
   guardrails:"Model-level alignment; no external filter layer observed in testing. Free chat.z.ai runs looser than the API.",
   censorship:"4/10", censorStars:4, censorOf:10, ease:6.0,
   eq:null, eqProxy:"GLM-5.2 · 1753", eqScore:8.3, eqHollow:true,
+  repoWrite:"GLM-5.2: notable writing upgrade — realistic character generation",
   radar:{Reasoning:9.5, "Coding":9.6, "Writing quality":8.3, "Ease of jailbreak":6.0, "Context window":9.5, "Cost efficiency":9.0, "Multimodal":7.5, "Tool use":9.3},
   hollow:{"Writing quality":true},
   jailbreaks:9, methods:["ENI variants — 9 jailbreaks in repo folder"],
@@ -382,6 +397,7 @@ const MODELS = [
   guardrails:"App-side HARD FILTERS replace the response outright — defeated by simply asking again (repo). Contributor tier ($0.10/$0.20) requires training-data opt-in. Muse Glimmer 30B (Apache 2.0) runs local on a single 24GB GPU.",
   censorship:"2/10 (bypass) · 8/10 (raw)", censorStars:2, censorOf:10, ease:8.0,
   eq:null, eqProxy:"Spark 1.1 · 1916", eqScore:9.0, eqHollow:true,
+  repoWrite:"Spark: very good writing quality — pretty peak; strong long-form content",
   radar:{Reasoning:9.0, "Coding":9.2, "Writing quality":9.0, "Ease of jailbreak":8.0, "Context window":9.5, "Cost efficiency":8.8, "Multimodal":7.5, "Tool use":9.0},
   hollow:{"Writing quality":true},
   jailbreaks:2, methods:["Hard-filter bypass (ask again)","ENI variants"],
@@ -435,7 +451,8 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const byId=id=>MODELS.find(m=>m.id===id);
 const MAXSEL=3;
-const state={selected:["opus-5.5","kimi-k3"],highlight:false};
+const state={mode:"compare",selected:["opus-5.5","kimi-k3"],single:"opus-5.5",highlight:false};
+const activeList=()=>state.mode==="single"?[state.single]:state.selected;
 
 /* ---------- vendor chips ---------- */
 (function renderChips(){
@@ -465,7 +482,8 @@ function renderRadar(){
     const dy=s>0.6?12:s<-0.6?-2:4;
     h+=`<text class="axis-label" x="${x.toFixed(1)}" y="${(y+dy).toFixed(1)}" text-anchor="${anchor}">${esc(a)}</text>`;
   });
-  state.selected.forEach((id,si)=>{
+  const list=activeList();
+  list.forEach((id,si)=>{
     const m=byId(id), color=SLOT_COLORS[si];
     const vpts=AXES.map((a,i)=>pt(i,R*m.radar[a]/10));
     h+=`<polygon class="poly" points="${ptsStr(vpts)}" fill="${color}" stroke="${color}"/>`;
@@ -474,11 +492,11 @@ function renderRadar(){
       h+=`<circle class="pt" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4.5" data-s="${si}" data-a="${i}" fill="${hol?"#0b0b0d":color}" stroke="${color}"/>`;
     });
   });
-  if(state.highlight){
+  if(state.highlight&&state.mode==="compare"){
     AXES.forEach((a,ai)=>{
       let bi=0,bv=-1;
-      state.selected.forEach((id,si)=>{ const v=byId(id).radar[a]; if(v>bv){bv=v;bi=si;} });
-      const [x,y]=pt(ai,R*byId(state.selected[bi]).radar[a]/10);
+      list.forEach((id,si)=>{ const v=byId(id).radar[a]; if(v>bv){bv=v;bi=si;} });
+      const [x,y]=pt(ai,R*byId(list[bi]).radar[a]/10);
       h+=`<circle class="best-ring" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="10"/>`;
     });
   }
@@ -489,7 +507,7 @@ function renderRadar(){
     leg.style.cssText="display:flex;gap:20px;justify-content:center;flex-wrap:wrap;padding:16px 0 12px";
     svg.parentNode.appendChild(leg);
   }
-  leg.innerHTML=state.selected.map((id,si)=>{
+  leg.innerHTML=list.map((id,si)=>{
     const m=byId(id);
     return `<span style="font-family:var(--mono);font-size:12.5px;color:var(--dim)"><span style="display:inline-block;width:10px;height:10px;background:${SLOT_COLORS[si]};border-radius:2px;margin-right:7px"></span>${esc(m.name)}</span>`;
   }).join("")+`<span style="font-family:var(--mono);font-size:12px;color:var(--faint)">◌ hollow points use fallbacks · hover any vertex for provenance</span>`;
@@ -498,8 +516,8 @@ function renderRadar(){
 /* ---------- tooltip ---------- */
 const tip=$("#tooltip");
 function showTip(s,i){
-  const m=byId(state.selected[s]), a=AXES[i], v=m.radar[a], hol=!!m.hollow[a];
-  const key=s+"|"+i;
+  const m=byId(activeList()[s]), a=AXES[i], v=m.radar[a], hol=!!m.hollow[a];
+  const key=m.id+"|"+i;
   if(tip.dataset.key!==key){
     let prov;
     if(hol){
@@ -531,18 +549,19 @@ function moveTip(e){
 /* ---------- compare grid ---------- */
 function renderCompare(){
   const g=$("#compareGrid");
-  g.style.gridTemplateColumns=`repeat(${state.selected.length},1fr)`;
-  g.innerHTML=state.selected.map((id,si)=>{
+  const list=activeList();
+  g.style.gridTemplateColumns=`repeat(${list.length},1fr)`;
+  g.innerHTML=list.map((id,si)=>{
     const m=byId(id), color=SLOT_COLORS[si];
     const holAxes=AXES.filter(a=>m.hollow[a]);
     const opts=MODELS.map(o=>
-      `<option value="${o.id}"${o.id===id?" selected":""}${state.selected.includes(o.id)&&o.id!==id?" disabled":""}>${esc(o.name)}</option>`
+      `<option value="${o.id}"${o.id===id?" selected":""}${state.mode==="compare"&&state.selected.includes(o.id)&&o.id!==id?" disabled":""}>${esc(o.name)}</option>`
     ).join("");
     return `<div class="sel-col">
       <div class="sel-head">
         <span class="sel-dot" style="background:${color}"></span>
         <select class="model-select" data-slot="${si}" aria-label="model slot ${si+1}">${opts}</select>
-        ${state.selected.length>1?`<button class="rm" data-slot="${si}" aria-label="remove ${esc(m.name)}">×</button>`:""}
+        ${state.mode==="compare"&&state.selected.length>1?`<button class="rm" data-slot="${si}" aria-label="remove ${esc(m.name)}">×</button>`:""}
       </div>
       <div class="legend-card">
         <span class="legend-swatch" style="background:${color}"></span>
@@ -564,6 +583,7 @@ function renderMenu(){
     (full?`<button disabled><span>max ${MAXSEL} models — remove one first</span></button>`:"")+
     avail.map(m=>`<button data-add="${m.id}"${full?" disabled":""}><span>${esc(m.name)}</span><span class="v">${esc(m.vendor)}</span></button>`).join("");
   $("#addBtn").style.opacity=full?.45:1;
+  document.querySelector(".add-model").style.display=state.mode==="single"?"none":"";
 }
 
 /* ---------- detail cards ---------- */
@@ -579,10 +599,11 @@ function statusBadge(m,withCount){
 }
 function renderDetails(){
   const g=$("#detailGrid");
-  g.style.gridTemplateColumns=`repeat(${state.selected.length},1fr)`;
-  g.innerHTML=state.selected.map((id,si)=>{
+  const list=activeList();
+  g.style.gridTemplateColumns=`repeat(${list.length},1fr)`;
+  g.innerHTML=list.map((id,si)=>{
     const m=byId(id), color=SLOT_COLORS[si];
-    const eqTxt=m.eq?`Elo ${m.eq} · EQ-Bench Creative`:`◌ proxy — ${esc(m.eqProxy)}`;
+    const eqTxt=(m.eq?`Elo ${m.eq} · EQ-Bench Creative`:`◌ proxy — ${esc(m.eqProxy)}`)+(m.repoWrite?`<div style="margin-top:6px;color:var(--amber);font-size:12px;text-align:left">repo: “${esc(m.repoWrite)}”</div>`:"");
     return `<div class="detail-col">
       <h3><span class="sel-dot" style="background:${color};display:inline-block;margin-right:9px"></span>${esc(m.name)}</h3>
       <div class="legend-vendor" style="margin-bottom:6px">${esc(m.vendor)} · ${statusBadge(m,true)}</div>
@@ -627,11 +648,11 @@ const trunc=(s,n)=>s.length>n?s.slice(0,n-1)+"…":s;
 function renderRoster(){
   const tb=$("#rosterTable tbody");
   tb.innerHTML=MODELS.map(m=>{
-    const si=state.selected.indexOf(m.id);
+    const si=(state.mode==="single"?[state.single]:state.selected).indexOf(m.id);
     const dot=si>=0?`<span class="sel-dot" style="background:${SLOT_COLORS[si]};display:inline-block;margin-right:8px;width:9px;height:9px"></span>`:"";
     const eqCell=m.eq?`${m.eq}`:`<span style="color:var(--faint)">◌ ${esc(m.eqProxy)}</span>`;
     return `<tr data-id="${m.id}">
-      <td class="m">${dot}${esc(m.name)}</td>
+      <td class="m">${dot}<button class="m-link" data-view="${m.id}" title="open in single-model view">${esc(m.name)}</button></td>
       <td>${esc(m.vendor)}</td>
       <td data-col="guard" title="${esc(m.guardrails)}"><div class="g">${esc(trunc(m.guardrails,140))}</div></td>
       <td data-col="censor">${stars(m)} <span style="font-size:12px">${esc(m.censorship)}</span></td>
@@ -668,7 +689,8 @@ $("#addMenu").addEventListener("click",e=>{
 });
 $("#compareGrid").addEventListener("change",e=>{
   const s=e.target.closest(".model-select"); if(!s)return;
-  state.selected[+s.dataset.slot]=s.value; renderAll();
+  if(state.mode==="single"){ state.single=s.value; } else { state.selected[+s.dataset.slot]=s.value; }
+  renderAll();
 });
 $("#compareGrid").addEventListener("click",e=>{
   const b=e.target.closest(".rm"); if(!b)return;
@@ -678,6 +700,21 @@ $("#highlightBest").addEventListener("click",()=>{
   state.highlight=!state.highlight;
   $("#highlightBest").classList.toggle("on",state.highlight);
   renderRadar(); renderRoster();
+});
+$("#viewSeg").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-mode]"); if(!b||b.dataset.mode===state.mode)return;
+  if(b.dataset.mode==="single"){ state.single=state.selected[0]; }
+  else if(!state.selected.includes(state.single)){ state.selected[0]=state.single; }
+  state.mode=b.dataset.mode;
+  document.querySelectorAll("#viewSeg button").forEach(x=>x.classList.toggle("on",x===b));
+  renderAll();
+});
+$("#rosterTable").addEventListener("click",e=>{
+  const b=e.target.closest(".m-link"); if(!b)return;
+  state.single=b.dataset.view; state.mode="single";
+  document.querySelectorAll("#viewSeg button").forEach(x=>x.classList.toggle("on",x.dataset.mode==="single"));
+  renderAll();
+  window.scrollTo({top:0,behavior:"smooth"});
 });
 $("#radarSvg").addEventListener("mousemove",e=>{
   const t=e.target;
