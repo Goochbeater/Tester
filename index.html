@@ -67,6 +67,16 @@ h2.page-sub{font-family:var(--mono);font-size:clamp(34px,6vw,64px);font-weight:7
 .m-link{background:none;border:none;color:var(--text);font-weight:700;font-family:var(--mono);font-size:13px;text-align:left;padding:0;border-bottom:1px dashed transparent}
 .m-link:hover{border-bottom-color:var(--blue);color:var(--blue)}
 
+/* ---------- tabs ---------- */
+.tabs{display:flex;gap:0;margin:26px 22px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tabs button{font-family:var(--mono);font-size:14px;padding:12px 20px;background:none;border:none;color:var(--dim);border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s,border-color .15s}
+.tabs button:hover{color:var(--text)}
+.tabs button.on{color:var(--text);border-bottom-color:var(--blue)}
+.tab-panel{display:none}
+.tab-panel.on{display:block}
+.tab-panel section.roster{border-top:none}
+.tab-panel section.meta{border-top:none;grid-template-columns:1fr;max-width:920px}
+
 /* ---------- compare grid ---------- */
 .compare-grid{display:grid;gap:0;padding:0 22px;border-top:1px solid var(--line)}
 .sel-col{border-left:1px solid var(--line);padding:26px 18px;display:flex;flex-direction:column;gap:14px;min-width:0}
@@ -162,11 +172,19 @@ footer span{font-family:var(--mono);font-size:12px;color:var(--faint)}
   </div>
 </header>
 
-<nav class="crumbs"><span class="past">Data</span><span>/</span><span class="cur">Compare</span></nav>
-<h1 class="page-title">Compare</h1>
+<nav class="crumbs"><span class="past">Data</span><span>/</span><span class="cur" id="crumbCur">Compare</span></nav>
+<h1 class="page-title" id="pageTitle">Compare</h1>
 <h2 class="page-sub">Jailbroken models</h2>
 <div class="tracker-tag">spiritual spell red teaming · tracker · <b>16 models · all personally tested &amp; jailbroken</b> · data: repo + EQ-Bench + vendor docs</div>
 
+<div class="tabs" id="tabs">
+  <button data-tab="compare" class="on">Compare</button>
+  <button data-tab="roster">Full roster</button>
+  <button data-tab="scoring">How scoring works</button>
+  <button data-tab="sources">Sources</button>
+</div>
+
+<div class="tab-panel on" id="tab-compare">
 <div class="vendor-chips" id="vendorChips"></div>
 
 <div class="controls">
@@ -190,9 +208,10 @@ footer span{font-family:var(--mono);font-size:12px;color:var(--faint)}
 </div>
 
 <div class="detail-grid" id="detailGrid"></div>
+</div>
 
+<div class="tab-panel" id="tab-roster">
 <section class="roster">
-  <h2>Full roster</h2>
   <p class="sub">every model in the spell book — censorship is ease-of-jailbreaking resistance (lower = softer target) · hover guardrails for the field note · click a model name to open it in single view</p>
   <div class="table-scroll">
     <table class="roster" id="rosterTable">
@@ -204,14 +223,19 @@ footer span{font-family:var(--mono);font-size:12px;color:var(--faint)}
     </table>
   </div>
 </section>
+</div>
 
+<div class="tab-panel" id="tab-scoring">
 <section class="meta">
   <div>
-    <h3>How scoring works</h3>
     <p>Radar axes are 0–10 normalizations. <b>Reasoning / Coding / Tool use</b> are anchored to published benchmarks cited in the repo (AA Intelligence Index, SWE-Bench Verified/Pro, Terminal-Bench 2.1, GPQA Diamond, CyberGym). <b>Writing quality</b> is anchored to the EQ-Bench Creative Writing public benchmark (Elo, Sep 2026 aggregation), cross-checked against the repo's own field verdicts — both are shown on each model card. <b>Ease of jailbreak</b> is the inverse of the repo's censorship rating, adjusted per-model where the repo notes one (e.g. Opus runs softer than Sonnet). <b>Context</b> scales to the max window; <b>Cost efficiency</b> to API in/out pricing. Hollow points are fallbacks — a sibling model's score or a family-level rating where the exact model is unscored. Hover any vertex for the provenance.</p>
   </div>
+</section>
+</div>
+
+<div class="tab-panel" id="tab-sources">
+<section class="meta">
   <div>
-    <h3>Sources</h3>
     <ul>
       <li><a href="https://github.com/Goochbeater/Spiritual-Spell-Red-Teaming" target="_blank" rel="noopener">Goochbeater/Spiritual-Spell-Red-Teaming</a> @ 53527b5 — censorship ratings, jailbreak methods, guardrail field notes, writing verdicts, pricing (Sep 2026)</li>
       <li>EQ-Bench Creative Writing v3 — Elo via evy.so aggregation (Sep 21, 2026); open-weight rubric via featherless.ai (Sep 17, 2026)</li>
@@ -223,6 +247,7 @@ footer span{font-family:var(--mono);font-size:12px;color:var(--faint)}
     </ul>
   </div>
 </section>
+</div>
 
 <footer>
   <span>DATA — jailbroken model tracker · last updated Oct 2026</span>
@@ -451,7 +476,7 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const byId=id=>MODELS.find(m=>m.id===id);
 const MAXSEL=3;
-const state={mode:"compare",selected:["opus-5.5","kimi-k3"],single:"opus-5.5",highlight:false};
+const state={tab:"compare",mode:"compare",selected:["opus-5.5","kimi-k3"],single:"opus-5.5",highlight:false};
 const activeList=()=>state.mode==="single"?[state.single]:state.selected;
 
 /* ---------- vendor chips ---------- */
@@ -678,6 +703,22 @@ function renderRoster(){
   }
 }
 
+/* ---------- tabs ---------- */
+const TAB_TITLES={compare:["Compare","Compare"],roster:["Full roster","Full roster"],scoring:["How scoring works","Scoring"],sources:["Sources","Sources"]};
+function setTab(t,updateHash){
+  if(!TAB_TITLES[t])t="compare";
+  state.tab=t;
+  document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
+  document.querySelectorAll(".tab-panel").forEach(p=>p.classList.toggle("on",p.id==="tab-"+t));
+  $("#crumbCur").textContent=TAB_TITLES[t][1];
+  $("#pageTitle").textContent=TAB_TITLES[t][0];
+  if(updateHash!==false){ try{history.replaceState(null,"","#"+t);}catch(_){}}
+}
+$("#tabs").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-tab]"); if(!b)return;
+  setTab(b.dataset.tab);
+});
+
 /* ---------- wiring ---------- */
 function renderAll(){ renderCompare(); renderRadar(); renderDetails(); renderRoster(); renderMenu(); }
 
@@ -713,6 +754,7 @@ $("#rosterTable").addEventListener("click",e=>{
   const b=e.target.closest(".m-link"); if(!b)return;
   state.single=b.dataset.view; state.mode="single";
   document.querySelectorAll("#viewSeg button").forEach(x=>x.classList.toggle("on",x.dataset.mode==="single"));
+  setTab("compare");
   renderAll();
   window.scrollTo({top:0,behavior:"smooth"});
 });
@@ -724,6 +766,7 @@ $("#radarSvg").addEventListener("mousemove",e=>{
 $("#radarSvg").addEventListener("mouseleave",()=>{ tip.style.display="none"; });
 
 renderAll();
+setTab((location.hash||"").slice(1),false);
 </script>
 </body>
 </html>
