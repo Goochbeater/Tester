@@ -475,10 +475,10 @@ function renderRadar(){
     });
   });
   if(state.highlight){
-    AXES.forEach(a=>{
+    AXES.forEach((a,ai)=>{
       let bi=0,bv=-1;
       state.selected.forEach((id,si)=>{ const v=byId(id).radar[a]; if(v>bv){bv=v;bi=si;} });
-      const [x,y]=pt(i,R*byId(state.selected[bi]).radar[a]/10);
+      const [x,y]=pt(ai,R*byId(state.selected[bi]).radar[a]/10);
       h+=`<circle class="best-ring" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="10"/>`;
     });
   }
